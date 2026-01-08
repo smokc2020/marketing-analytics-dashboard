@@ -16,11 +16,10 @@
     <link rel="apple-touch-icon" href="/assets/icon-180.png">
 
     <!-- Google Identity Services -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://accounts.google.com/gsi/client\" async defer></script>
 
     <!-- Google API (GAPI) for Sheets -->
-    <script src="https://apis.google.com/js/api.js" onload="gapiLoaded()" async defer></script>
-    <script src="https://accounts.google.com/gsi/client" onload="gisLoaded()" async defer></script>
+    <script src="https://apis.google.com/js/api.js" async defer></script>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -780,6 +779,21 @@
             gisInited = true;
             console.log('GIS initialized');
         }
+
+        /**
+         * Wait for scripts to load then initialize
+         */
+        window.addEventListener('load', () => {
+            // Initialize GAPI
+            if (typeof gapi !== 'undefined') {
+                gapiLoaded();
+            }
+            // Initialize GIS  
+            if (typeof google !== 'undefined' && google.accounts) {
+                gisLoaded();
+            }
+        });
+
 
         // Sign In
         function signIn() {
