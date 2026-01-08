@@ -1,5 +1,5 @@
-const CACHE_NAME = 'analytics-dashboard-v2';
-const RUNTIME_CACHE = 'analytics-runtime-v2';
+const CACHE_NAME = 'analytics-dashboard-v3';
+const RUNTIME_CACHE = 'analytics-runtime-v3';
 
 // Optimized assets to cache
 const PRECACHE_ASSETS = [
@@ -7,6 +7,7 @@ const PRECACHE_ASSETS = [
     '/index.html',
     '/config.js',
     '/manifest.json',
+    '/favicon.ico',
     '/assets/icon-192.png',
     '/assets/icon-512.png'
 ];
