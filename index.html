@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketing Analytics Dashboard</title>
+
+    <!-- PWA Configuration -->
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Analytics">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="/assets/icon-192.png">
+    <link rel="apple-touch-icon" href="/assets/icon-180.png">
+
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <!-- Google API (GAPI) for Sheets -->
+    <script src="https://apis.google.com/js/api.js" onload="gapiLoaded()" async defer></script>
+    <script src="https://accounts.google.com/gsi/client" onload="gisLoaded()" async defer></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f5f7fa;
+            color: #2d3748;
+            min-height: 100vh;
+        }
+
+        /* Lark Base Inspired Design */
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: #1e293b;
+            color: white;
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            margin-bottom: 32px;
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+        }
+
+        .nav-item {
+            padding: 12px 16px;
+            margin-bottom: 4px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-item.active {
+            background: rgba(99, 102, 241, 0.2);
+            color: #818cf8;
+        }
+
+        .user-section {
+            padding: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: auto;
+        }
+
+        .user-info-sidebar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+        }
+
+        .user-details-sidebar {
+            flex: 1;
+        }
+
+        .user-name-sidebar {
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .user-email-sidebar {
+            font-size: 0.75rem;
+            opacity: 0.7;
+        }
+
+        .logout-link {
+            font-size: 0.75rem;
+            color: #818cf8;
+            cursor: pointer;
+            margin-top: 8px;
+            display: inline-block;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            background: #f5f7fa;
+        }
+
+        .topbar {
+            background: white;
+            padding: 16px 32px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .topbar h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .topbar-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.875rem;
+        }
+
+        .btn-primary {
+            background: #6366f1;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #4f46e5;
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .content-area {
+            padding: 32px;
+        }
+
+        /* Auth Screen */
+        .auth-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .auth-card {
+            background: white;
+            padding: 48px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 440px;
+        }
+
+        .auth-card h2 {
+            font-size: 1.875rem;
+            margin-bottom: 12px;
+        }
+
+        .auth-card p {
+            color: #64748b;
+            margin-bottom: 32px;
+        }
+
+        .google-signin-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 28px;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .google-signin-btn:hover {
+            border-color: #6366f1;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+        }
+
+        /* KPI Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+        }
+
+        .kpi-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .kpi-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .kpi-label {
+            font-size: 0.875rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .kpi-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .kpi-icon.blue {
+            background: #dbeafe;
+        }
+
+        .kpi-icon.green {
+            background: #d1fae5;
+        }
+
+        .kpi-icon.orange {
+            background: #fed7aa;
+        }
+
+        .kpi-icon.purple {
+            background: #e9d5ff;
+        }
+
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .kpi-trend {
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .kpi-trend.positive {
+            color: #10b981;
+        }
+
+        .kpi-trend.negative {
+            color: #ef4444;
+        }
+
+        /* Charts */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .chart-header {
+            margin-bottom: 20px;
+        }
+
+        .chart-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        /* Table */
+        .table-card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 24px;
+        }
+
+        .table-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .table-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 12px 24px;
+            background: #f8fafc;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: #475569;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        td {
+            padding: 16px 24px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 0.875rem;
+        }
+
+        tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-shipped {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        /* Loading */
+        .loading-screen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid #6366f1;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            margin-top: 16px;
+            color: #64748b;
+            font-weight: 500;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Auth Screen -->
+    <div id="authScreen" class="auth-screen">
+        <div class="auth-card">
+            <h2>📊 Marketing Analytics</h2>
+            <p>Đăng nhập bằng Gmail để xem dashboard phân tích marketing của bạn</p>
+            <button class="google-signin-btn" onclick="signIn()">
+                <svg width="20" height="20" viewBox="0 0 24 24">
+                    <path fill="#4285F4"
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                    <path fill="#34A853"
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                    <path fill="#FBBC05"
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                    <path fill="#EA4335"
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                </svg>
+                Đăng nhập với Google
+            </button>
+        </div>
+    </div>
+
+    <!-- Dashboard App -->
+    <div id="dashboardApp" class="app-container" style="display: none;">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <span style="font-size: 1.5rem;">📊</span>
+                <h1>Marketing Analytics</h1>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-item active">
+                    <span>📈</span>
+                    <span>Dashboard</span>
+                </div>
+                <div class="nav-item">
+                    <span>📊</span>
+                    <span>Báo cáo</span>
+                </div>
+                <div class="nav-item">
+                    <span>⚙️</span>
+                    <span>Cài đặt</span>
+                </div>
+            </nav>
+
+            <div class="user-section">
+                <div class="user-info-sidebar">
+                    <img id="userAvatarSidebar" class="user-avatar" src="" alt="User">
+                    <div class="user-details-sidebar">
+                        <div class="user-name-sidebar" id="userNameSidebar"></div>
+                        <div class="user-email-sidebar" id="userEmailSidebar"></div>
+                    </div>
+                </div>
+                <div class="logout-link" onclick="signOut()">Đăng xuất</div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="topbar">
+                <h2>Dashboard Tổng Quan</h2>
+                <div class="topbar-actions">
+                    <button id="installBtn" class="btn btn-primary" style="display: none;" onclick="installApp()">📲 Cài
+                        đặt App</button>
+                    <button class="btn btn-secondary" onclick="loadData()">🔄 Làm mới</button>
+                    <select class="btn btn-secondary" style="padding: 10px 16px;">
+                        <option>Tất cả sản phẩm</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <!-- KPIs -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <div class="kpi-label">Tổng Chi Tiêu</div>
+                            <div class="kpi-icon blue">💰</div>
+                        </div>
+                        <div class="kpi-value" id="kpiSpend">0 ₫</div>
+                        <div class="kpi-trend">Loading...</div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <div class="kpi-label">Tổng Doanh Thu</div>
+                            <div class="kpi-icon green">💵</div>
+                        </div>
+                        <div class="kpi-value" id="kpiRevenue">0 ₫</div>
+                        <div class="kpi-trend positive" id="kpiRevenueTrend">↗ +0%</div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <div class="kpi-label">Tổng Đơn Chốt</div>
+                            <div class="kpi-icon orange">📦</div>
+                        </div>
+                        <div class="kpi-value" id="kpiOrders">0</div>
+                        <div class="kpi-trend">Đơn hàng</div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <div class="kpi-label">Tỷ Lệ Chuyển Đổi</div>
+                            <div class="kpi-icon purple">📈</div>
+                        </div>
+                        <div class="kpi-value" id="kpiConversion">0%</div>
+                        <div class="kpi-trend">Lead to Order</div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <div class="chart-title">Doanh thu theo sản phẩm</div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <div class="chart-title">Chi tiêu FB vs GG</div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="spendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product Table -->
+                <div class="table-card">
+                    <div class="table-header">
+                        <div class="table-title">Hiệu suất theo sản phẩm</div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Sản phẩm</th>
+                                <th>Chi tiêu</th>
+                                <th>Doanh thu</th>
+                                <th>Đơn hàng</th>
+                                <th>ROI</th>
+                                <th>Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productTableBody">
+                            <tr>
+                                <td colspan="6" style="text-align: center; padding: 40px;">Đang tải dữ liệu...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="spinner"></div>
+        <div class="loading-text">Đang tải dữ liệu...</div>
+    </div>
+
+    <script>
+        // ========== Configuration ==========
+        const CLIENT_ID = '484034192422-jcva2k0o68ju2pc0fvn3sjnqegvgnli8.apps.googleusercontent.com';
+        const SPREADSHEET_ID = '1Y00cAbIfyo4xiYJYhBsGQ5vJgU21g7mtNhet8NRv7fM';
+        const SCOPES = 'https://www.googleapis.com/auth/spreadsheets.readonly';
+
+        // Authorized emails - add team members here
+        const AUTHORIZED_EMAILS = [
+            'thehienpro223@gmail.com',
+            '*' // Allow all emails (remove this line to restrict)
+        ];
+
+        // Multi-sheet configuration
+        const SHEETS_CONFIG = {
+            productSummary: 'Tổng_theo sản phẩm!A11:Q50',
+            regionData: 'Tổng-Vùng!A2:Z100',
+            demographics: 'Tổng_Giới tính+tuổi!A2:Z100',
+            orders: 'AdsOrders!A2:I1000'
+        };
+
+        // ========== PWA Installation ==========
+        let deferredPrompt;
+
+        let tokenClient;
+        let gapiInited = false;
+        let gisInited = false;
+        let accessToken = null;
+
+        /**
+         * PWA Service Worker Registration
+         */
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('[PWA] Service Worker registered'))
+                    .catch(err => console.error('[PWA] Service Worker registration failed:', err));
+            });
+        }
+
+        /**
+         * PWA Install Prompt
+         */
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            // Show install button
+            const installBtn = document.getElementById('installBtn');
+            if (installBtn) {
+                installBtn.style.display = 'inline-block';
+            }
+        });
+
+        function installApp() {
+            if (!deferredPrompt) {
+                alert('Ứng dụng đã được cài đặt hoặc chưa hỗ trợ cài đặt.');
+                return;
+            }
+
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('[PWA] User accepted the install prompt');
+                    document.getElementById('installBtn').style.display = 'none';
+                }
+                deferredPrompt = null;
+            });
+        }
+
+        // Check if app was installed
+        window.addEventListener('appinstalled', (evt) => {
+            console.log('[PWA] App was installed');
+            document.getElementById('installBtn').style.display = 'none';
+        });
+
+        /**
+         * Session Persistence
+         */
+        function saveSession(token, userEmail, userName, userPicture) {
+            localStorage.setItem('auth_token', token);
+            localStorage.setItem('user_email', userEmail);
+            localStorage.setItem('user_name', userName);
+            localStorage.setItem('user_picture', userPicture);
+            localStorage.setItem('login_time', Date.now());
+        }
+
+        function clearSession() {
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('user_email');
+            localStorage.removeItem('user_name');
+            localStorage.removeItem('user_picture');
+            localStorage.removeItem('login_time');
+        }
+
+        function getSession() {
+            const token = localStorage.getItem('auth_token');
+            const email = localStorage.getItem('user_email');
+            const name = localStorage.getItem('user_name');
+            const picture = localStorage.getItem('user_picture');
+            const loginTime = localStorage.getItem('login_time');
+
+            // Check if session is expired (7 days)
+            if (loginTime && (Date.now() - parseInt(loginTime) > 7 * 24 * 60 * 60 * 1000)) {
+                clearSession();
+                return null;
+            }
+
+            return token ? { token, email, name, picture } : null;
+        }
+
+        /**
+         * Authorized Email Check
+         */
+        function isAuthorizedEmail(email) {
+            if (!email) return false;
+
+            // Check for wildcard (allow all)
+            if (AUTHORIZED_EMAILS.includes('*')) return true;
+
+            // Check exact match
+            if (AUTHORIZED_EMAILS.includes(email.toLowerCase())) return true;
+
+            // Check domain wildcard (e.g., '*@company.com')
+            const domain = email.split('@')[1];
+            return AUTHORIZED_EMAILS.some(allowed => {
+                if (allowed.startsWith('*@')) {
+                    return domain === allowed.substring(2);
+                }
+                return false;
+            });
+        }
+
+        /**
+         * Initialize Google API
+         */
+        function gapiLoaded() {
+            gapi.load('client', initializeGapiClient);
+        }
+
+        async function initializeGapiClient() {
+            try {
+                await gapi.client.init({
+                    discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
+                });
+                gapiInited = true;
+                console.log('GAPI client initialized');
+            } catch (error) {
+                console.error('Error initializing GAPI client:', error);
+                alert('Lỗi khởi tạo Google API: ' + error.message);
+            }
+        }
+
+        /**
+         * Initialize Google Identity Services
+         */
+        function gisLoaded() {
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID,
+                scope: SCOPES,
+                callback: '', // defined later
+            });
+            gisInited = true;
+            console.log('GIS initialized');
+        }
+
+        // Sign In
+        function signIn() {
+            if (!gapiInited || !gisInited) {
+                alert('Google API chưa sẵn sàng. Vui lòng đợi và thử lại.');
+                return;
+            }
+
+            tokenClient.callback = async (response) => {
+                if (response.error !== undefined) {
+                    alert('Lỗi đăng nhập: ' + response.error);
+                    return;
+                }
+
+                accessToken = response.access_token;
+                gapi.client.setToken({ access_token: accessToken });
+
+                // Get user info and validate email
+                try {
+                    const userResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+                        headers: { 'Authorization': `Bearer ${accessToken}` }
+                    });
+                    const user = await userResponse.json();
+
+                    // Check email authorization
+                    if (!isAuthorizedEmail(user.email)) {
+                        alert(`❌ Email ${user.email} không được phép truy cập.\n\nVui lòng liên hệ quản trị viên để được cấp quyền.`);
+                        signOut();
+                        return;
+                    }
+
+                    // Save session for auto-login
+                    saveSession(accessToken, user.email, user.name, user.picture);
+                    console.log('[Auth] Session saved for:', user.email);
+
+                    showDashboard(user);
+                } catch (error) {
+                    console.error('Error validating user:', error);
+                    showDashboard();
+                }
+            };
+
+            tokenClient.requestAccessToken({ prompt: '' });
+        }
+
+        // Sign Out
+        function signOut() {
+            accessToken = null;
+            if (gapi.client) {
+                gapi.client.setToken('');
+            }
+            clearSession(); // Clear saved session
+            console.log('[Auth] Session cleared');
+            document.getElementById('dashboardApp').style.display = 'none';
+            document.getElementById('authScreen').style.display = 'flex';
+        }
+
+        // Auto-login from saved session on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            const session = getSession();
+            if (session && isAuthorizedEmail(session.email)) {
+                console.log('[Session] Restoring session for:', session.email);
+                // Wait for GAPI/GIS to initialize
+                const checkInit = setInterval(() => {
+                    if (gapiInited && gisInited) {
+                        clearInterval(checkInit);
+                        accessToken = session.token;
+                        gapi.client.setToken({ access_token: accessToken });
+                        showDashboard({
+                            email: session.email,
+                            name: session.name,
+                            picture: session.picture
+                        });
+                    }
+                }, 100);
+            }
+        });
+
+        async function showDashboard(user = null) {
+            document.getElementById('authScreen').style.display = 'none';
+            document.getElementById('dashboardApp').style.display = 'flex';
+
+            // Get user info if not provided
+            if (!user) {
+                try {
+                    const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+                        headers: { 'Authorization': `Bearer ${accessToken}` }
+                    });
+                    user = await response.json();
+                } catch (error) {
+                    console.error('Error getting user info:', error);
+                    user = { name: 'User', email: '', picture: '' };
+                }
+            }
+
+            document.getElementById('userNameSidebar').textContent = user.name;
+            document.getElementById('userEmailSidebar').textContent = user.email;
+            document.getElementById('userAvatarSidebar').src = user.picture;
+        } catch (error) {
+            console.error('Error getting user info:', error);
+        }
+
+        // Load data
+        loadData();
+        }
+
+        async function loadData() {
+            document.getElementById('loadingScreen').style.display = 'flex';
+
+            try {
+                const response = await gapi.client.sheets.spreadsheets.values.batchGet({
+                    spreadsheetId: SPREADSHEET_ID,
+                    ranges: [
+                        'Tổng_theo sản phẩm!A11:Q50',
+                        'AdsOrders!A2:I1000'
+                    ],
+                });
+
+                const data = response.result;
+                console.log('Data loaded:', data);
+
+                if (data.valueRanges && data.valueRanges.length > 0) {
+                    processData(data.valueRanges);
+                }
+            } catch (error) {
+                console.error('Error loading data:', error);
+                alert('Lỗi tải dữ liệu. Vui lòng đăng nhập lại.');
+                signOut();
+            } finally {
+                document.getElementById('loadingScreen').style.display = 'none';
+            }
+        }
+
+        function processData(ranges) {
+            const summaryData = ranges[0].values || [];
+
+            // Calculate KPIs
+            let totalSpend = 0;
+            let totalRevenue = 0;
+            let totalOrders = 0;
+            let totalLeads = 0;
+
+            const products = [];
+
+            summaryData.forEach((row, index) => {
+                if (index === 0 || !row[0]) return; // Skip header
+
+                const spend = parseFloat(row[1]) || 0;
+                const revenue = parseFloat(row[9]) || 0;
+                const orders = parseInt(row[8]) || 0;
+                const leads = (parseInt(row[4]) || 0) + (parseInt(row[5]) || 0);
+
+                totalSpend += spend;
+                totalRevenue += revenue;
+                totalOrders += orders;
+                totalLeads += leads;
+
+                products.push({
+                    name: row[0],
+                    spend,
+                    revenue,
+                    orders,
+                    roi: spend > 0 ? ((revenue - spend) / spend * 100).toFixed(1) : 0
+                });
+            });
+
+            // Update KPIs
+            document.getElementById('kpiSpend').textContent = formatCurrency(totalSpend);
+            document.getElementById('kpiRevenue').textContent = formatCurrency(totalRevenue);
+            document.getElementById('kpiOrders').textContent = formatNumber(totalOrders);
+
+            const conversion = totalLeads > 0 ? (totalOrders / totalLeads * 100).toFixed(1) : 0;
+            document.getElementById('kpiConversion').textContent = conversion + '%';
+
+            const roi = totalSpend > 0 ? ((totalRevenue - totalSpend) / totalSpend * 100).toFixed(1) : 0;
+            document.getElementById('kpiRevenueTrend').textContent = `↗ ROI: ${roi}%`;
+            document.getElementById('kpiRevenueTrend').className = roi > 0 ? 'kpi-trend positive' : 'kpi-trend negative';
+
+            // Update table
+            updateProductTable(products);
+
+            // Update charts
+            updateCharts(products, totalSpend);
+        }
+
+        function updateProductTable(products) {
+            const tbody = document.getElementById('productTableBody');
+            tbody.innerHTML = '';
+
+            products.slice(0, 10).forEach(p => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td><strong>${p.name}</strong></td>
+                    <td>${formatCurrency(p.spend)}</td>
+                    <td>${formatCurrency(p.revenue)}</td>
+                    <td>${formatNumber(p.orders)}</td>
+                    <td style="color: ${p.roi > 0 ? '#10b981' : '#ef4444'}; font-weight: 600;">${p.roi}%</td>
+                    <td><span class="status-badge status-shipped">Active</span></td>
+                `;
+            });
+        }
+
+        function updateCharts(products, totalSpend) {
+            const top10 = products.sort((a, b) => b.revenue - a.revenue).slice(0, 10);
+
+            // Revenue chart
+            new Chart(document.getElementById('revenueChart'), {
+                type: 'bar',
+                data: {
+                    labels: top10.map(p => p.name),
+                    datasets: [{
+                        label: 'Doanh thu',
+                        data: top10.map(p => p.revenue),
+                        backgroundColor: '#6366f1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // Spend chart
+            const fbSpend = products.reduce((sum, p) => sum + (parseFloat(p.fbSpend) || 0), 0);
+            const ggSpend = totalSpend - fbSpend;
+
+            new Chart(document.getElementById('spendChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Facebook', 'Google'],
+                    datasets: [{
+                        data: [fbSpend || totalSpend * 0.6, ggSpend || totalSpend * 0.4],
+                        backgroundColor: ['#3b5998', '#ea4335']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND'
+            }).format(value || 0);
+        }
+
+        function formatNumber(value) {
+            return new Intl.NumberFormat('vi-VN').format(value || 0);
+        }
+    </script>
+
+</body>
+
+</html>

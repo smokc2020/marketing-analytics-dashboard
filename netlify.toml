@@ -1,0 +1,11 @@
+# Netlify deploy configuration
+[build]
+  publish = "."
+  
+[build.environment]
+  # No build step needed - static files only
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
