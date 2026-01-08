@@ -892,12 +892,9 @@
             document.getElementById('userNameSidebar').textContent = user.name;
             document.getElementById('userEmailSidebar').textContent = user.email;
             document.getElementById('userAvatarSidebar').src = user.picture;
-        } catch (error) {
-            console.error('Error getting user info:', error);
-        }
 
-        // Load data
-        loadData();
+            // Load data
+            loadData();
         }
 
         async function loadData() {
